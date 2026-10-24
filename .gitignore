@@ -1,0 +1,6 @@
+# La ROM del juego y lo que sale de ella no se distribuyen
+*.rom
+work/
+__pycache__/
+*.pyc
+.forja/

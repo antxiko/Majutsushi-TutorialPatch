@@ -1,0 +1,107 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hai no Majutsushi — parche tutorial (Konami, 1989)</title>
+<style>
+:root{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;--linea:#23262e;
+  --rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+@media (prefers-color-scheme:light){:root{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;
+  --panel:#f7f6f2;--linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}}
+:root[data-theme="dark"]{--tinta:#cfd0d4;--suave:#83868f;--fondo:#000;--panel:#0c0e13;
+  --linea:#23262e;--rojo:#ff897d;--cyan:#65dbef;--verde:#3eb849;--oro:#ded087}
+:root[data-theme="light"]{--tinta:#191a1e;--suave:#5a5d66;--fondo:#e9e7e1;--panel:#f7f6f2;
+  --linea:#d0cdc5;--rojo:#b23f34;--cyan:#1c6b7c;--verde:#2b7734;--oro:#8a7420}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);padding:0 1.25rem 6rem;
+  font:15px/1.7 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+.w{max-width:1120px;margin:0 auto}
+.n{max-width:68ch}
+h1,h2,h3,h4{font-weight:400;text-wrap:balance}
+a{color:var(--cyan)}
+img{image-rendering:pixelated;max-width:100%;height:auto;display:block}
+header.top{display:flex;flex-direction:column;align-items:center;gap:1.5rem;
+  padding:4rem 0 2rem;text-align:center}
+header.top img{width:min(100%,642px)}
+.claim{max-width:60ch;color:var(--suave);font-size:1.05rem}
+.claim b{color:var(--tinta);font-weight:400}
+.ficha{display:flex;flex-wrap:wrap;justify-content:center;gap:0 1.5rem;width:100%;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--suave);
+  border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);padding:.85rem 0}
+.ficha b{color:var(--rojo);font-weight:400}
+nav{display:flex;flex-wrap:wrap;gap:1.25rem;justify-content:center;padding:1.25rem 0;
+  font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+nav a{color:var(--suave);text-decoration:none;border-bottom:1px solid transparent}
+nav a:hover,nav a:focus{color:var(--tinta);border-bottom-color:var(--rojo)}
+nav.docs{border-top:1px solid var(--linea);border-bottom:1px solid var(--linea);
+  margin-bottom:1rem}
+section{margin-top:4.5rem;scroll-margin-top:1rem}
+section>h2{font-size:1rem;letter-spacing:.1em;text-transform:uppercase;
+  border-left:3px solid var(--rojo);padding-left:.9rem;margin:0 0 1.5rem}
+.cifras{display:grid;gap:1px;background:var(--linea);border:1px solid var(--linea);
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.cifra{background:var(--panel);padding:1.1rem}
+.cifra b{display:block;font-size:1.7rem;color:var(--oro);font-weight:400;
+  font-variant-numeric:tabular-nums;line-height:1.2}
+.cifra span{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--suave)}
+.hall{border-top:1px solid var(--linea);padding-top:1.75rem;margin-top:2.5rem}
+.hall:first-of-type{border-top:0;padding-top:0;margin-top:0}
+.hall h3{margin:0 0 .75rem;font-size:1.15rem;color:var(--rojo)}
+.hall h4{color:var(--oro);margin:1.5rem 0 .5rem;font-size:.95rem}
+.hall p{margin:0 0 1rem}
+pre.asm{background:var(--panel);border-left:2px solid var(--verde);margin:1.25rem 0;
+  padding:1rem 1.1rem;overflow-x:auto;font-size:13px;line-height:1.6;color:var(--tinta)}
+.par{display:grid;gap:1.25rem;grid-template-columns:1fr}
+@media(min-width:820px){.par{grid-template-columns:1fr 1fr}}
+.par figure{margin:0}
+table{border-collapse:collapse;width:100%;margin:1.25rem 0;font-size:13px;display:block;
+  overflow-x:auto}
+th,td{text-align:left;padding:.5rem .75rem;border-bottom:1px solid var(--linea)}
+th{color:var(--suave);font-weight:400;font-size:11px;letter-spacing:.07em;text-transform:uppercase}
+td.num{font-variant-numeric:tabular-nums;color:var(--oro)}
+.nivel{margin-top:2rem}
+.nivel h3{margin:0 0 .9rem;font-size:.95rem;letter-spacing:.06em;text-transform:uppercase}
+.nivel em{color:var(--cyan);font-style:normal}
+.sep{color:var(--suave);margin:0 .6rem}
+.rejilla{display:grid;gap:.9rem;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.rejilla figure{margin:0;background:var(--panel);box-shadow:0 0 0 1px var(--linea)}
+.rejilla figcaption{display:flex;justify-content:space-between;padding:.45rem .65rem;
+  font-size:11px;color:var(--suave);border-top:1px solid var(--linea)}
+.dir{font-variant-numeric:tabular-nums;color:var(--verde)}
+footer{margin-top:5rem;padding-top:1.5rem;border-top:1px solid var(--linea);
+  color:var(--suave);font-size:12px}
+
+/* Aviso de trabajo en curso: tiene que verse antes que las cifras, porque un
+   100% mal leido hace mas dano que no ponerlo. */
+.aviso{background:#3a2a10;border-left:3px solid var(--oro);margin:1.5rem auto;
+  padding:1rem 1.2rem;max-width:900px;border-radius:4px}
+.aviso p{margin:0;color:var(--tinta);font-size:15px;line-height:1.65}
+.galeria{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:1.5rem;margin:1.5rem 0}
+.galeria figure{margin:0}
+.galeria img{width:100%;height:auto;image-rendering:pixelated;
+  border:1px solid var(--linea);border-radius:3px}
+.galeria figcaption{color:var(--suave);font-size:13px;margin-top:.5rem}
+audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
+</style>
+<div class="w"><nav class="top"><a href="index.html" style=color:var(--tinta)>Portada</a><a href="../index.html" style="margin-left:auto;color:var(--oro)">English</a></nav>
+<h1 id="hai-no-majutsushi-parche-tutorial">Hai no Majutsushi — parche tutorial</h1>
+<p>牌の魔術師 (<em>Hai no Majutsushi - Mahjong 2</em>; Konami, 1989, RC-765) es un mahjong para MSX2 con todos sus menús y mensajes en japonés. Este parche le añade un <b>tutorial corto en inglés</b>: con <b>F1</b> en el primer menú, cinco páginas explican cómo se juega, los dos menús, las llamadas, los rivales y las teclas de la música. Espacio pasa de página; tras la última se vuelve al menú. El resto del juego no cambia.</p>
+<p><b>1.264</b> bytes cambiados en <b>6</b> sitios · IPS de <b>1.302</b> bytes · todo en espacio que el cartucho no usa · no se distribuye ninguna ROM</p>
+<p><img src="../imagenes/tutorial_1.png" alt="La primera página del tutorial"></p>
+<h2 id="como-se-usa">Cómo se usa</h2>
+<ol><li>En el título, espacio: sale el primer menú (練習対局, práctica; 実戦対局, partida de verdad).</li><li><b>F1</b>. Se abre el tutorial.</li><li><b>Espacio</b> para la página siguiente. Tras la quinta vuelve el menú y el juego sigue como siempre.</li></ol>
+<table><tr><th></th><th></th></tr><tr><td><img src="../imagenes/tutorial_2.png" alt="página 2"></td><td><img src="../imagenes/tutorial_3.png" alt="página 3"></td></tr><tr><td><img src="../imagenes/tutorial_4.png" alt="página 4"></td><td><img src="../imagenes/tutorial_5.png" alt="página 5"></td></tr></table>
+<h2 id="que-hace-falta">Qué hace falta</h2>
+<ul><li><b>La ROM del juego</b>, que este repositorio no distribuye: <em>Hai no Majutsushi - Mahjong 2</em> (Konami, 1989, RC-765), 131.072 bytes, sha256 <code>7839c843dc787e01765c1ba3efbd26dcf5209d27e38bcee1345db3b3cffdf5db</code>.</li><li>Cualquier herramienta de IPS (Lunar IPS, Floating IPS, RomPatcher.js). Se aplica <a href="https://github.com/antxiko/Majutsushi-TutorialPatch/blob/main/parche/majutsushi_tutorial.ips">parche/majutsushi_tutorial.ips</a> a la ROM y sale la parcheada, sha256 <code>7bd8b0686b13c6c57fcff8f89f79af7d8622e4fcec1a5b0b6d1c040e229ce543</code>.</li></ul>
+<p>En openMSX el cartucho necesita su mapper (Konami con DAC):</p>
+<pre><code>openmsx -machine C-BIOS_MSX2 -cart majutsushi_tutorial.rom -romtype Majutsushi</code></pre>
+<h2 id="montarlo">Montarlo</h2>
+<p>Con Python 3 y <a href="https://pasmo.speccy.org/">pasmo</a> en el PATH, y la ROM en la raíz como <code>majutsushi.rom</code>:</p>
+<pre><code>python tools/construye.py majutsushi.rom</code></pre>
+<p>Ensambla <a href="https://github.com/antxiko/Majutsushi-TutorialPatch/blob/main/src/tutorial.asm">src/tutorial.asm</a>, comprueba que cada sitio donde escribe tiene lo que tiene el cartucho original (o 0xFF donde usa espacio libre) y escribe <code>work/majutsushi_tutorial.rom</code> y el IPS. Cualquier otra ROM la rechaza. Los textos y la fuente están en <a href="https://github.com/antxiko/Majutsushi-TutorialPatch/blob/main/tools/textos.py">tools/textos.py</a>, que escribe <code>src/datos.inc</code>. <code>python -m unittest discover -s tests</code> pasa los 6 tests: los textos son los del fuente, el IPS solo toca los seis sitios declarados y, con la ROM en la raíz, el IPS es el que sale del fuente y original + IPS es el original byte a byte fuera de esos sitios.</p>
+<h2 id="como-funciona">Cómo funciona</h2>
+<ul><li><b>El gancho.</b> El primer menú corre a cada cuadro desde p00:4396 (la entrada 1 de la tabla de estados de p00:4313). Ese bloque, con el sonido del cursor y el dibujo del cursor detrás, son 61 bytes. El parche lo escribe de nuevo en los mismos 61 bytes: <code>bit 4,a</code> en vez de <code>ld c,a / and 10h / ld a,c</code>, y los dos sprites del cursor escritos con <code>ld l,4</code> en vez de alternar HL y HL&#x27; con <code>exx</code>. Así queda sitio para mirar F1 al entrar (el bit 0 de 0xC00C, las teclas de función recién pulsadas) y para el salto al tutorial. El cursor y su sonido se mueven unos bytes, así que se corrigen las tres instrucciones que entran en ellos (p00:436F, 4834 y 483B). Nada más cambia en el banco 0.</li><li><b>El tutorial.</b> 104 bytes en el banco 15, en 0xAD8B, dentro de los 117 bytes a 0xFF que hay entre una tabla de tiles y la voz de 0xAE00. Pone los bancos 13-14-15 con la rutina del propio cartucho (p00:4246) y dibuja con las rutinas del cartucho: borra la pantalla (p00:4E50, p00:4FE5), espera al VDP (p00:4EEA), dibuja cada letra como un tile de 8 × 8 a un bit (p00:52A3) y lee las teclas (p00:55F0). Al salir deja el menú en el paso 0, para que se vuelva a dibujar, y repone los bancos 1-2-3, que son los que tiene el menú (medido en openMSX).</li><li><b>Los textos.</b> 1.097 bytes al final del banco 14 (0xBB7B), en el mayor tramo de 0xFF del cartucho (1.157 bytes): una fuente de 35 letras de 5 × 7 (280 bytes) y las cinco páginas (817 bytes), un byte por letra.</li><li><b>El espacio libre está medido.</b> En 15 minutos de openMSX entre título, menús y partida, con un punto de vigilancia en cada lectura de la ROM, nadie lee los 0xFF del final del banco 14 ni los de p15:AD8B.</li><li>Las direcciones salen del <a href="https://antxiko.github.io/Majutsushi-disassembly/es/">desensamblado comentado de Hai no Majutsushi</a>.</li></ul>
+<h2 id="probado">Probado</h2>
+<p>En openMSX (C-BIOS MSX2): F1 en el primer menú abre el tutorial, las cinco páginas pasan con espacio, vuelve el menú, el cursor sube y baja y al elegir práctica se llega al segundo menú. Aún sin probar en un MSX de verdad.</p>
+<h2 id="licencia">Licencia</h2>
+<p>MIT (<a href="https://github.com/antxiko/Majutsushi-TutorialPatch/blob/main/LICENSE">LICENSE</a>) para el parche, las herramientas y la documentación. El juego es de sus titulares: ver <a href="https://github.com/antxiko/Majutsushi-TutorialPatch/blob/main/AVISO-LEGAL.md">AVISO-LEGAL.md</a>.</p>
+<footer><p><em>Hai no Majutsushi - Mahjong 2</em> lo public&oacute; Konami para MSX2 en 1989; son 128 KB. Todos los derechos sobre el juego siguen siendo de sus titulares. Esto es un parche extraoficial: aqu&iacute; nunca se distribuye la imagen del cartucho.</p></footer></div>
