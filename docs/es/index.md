@@ -4,7 +4,7 @@
 
 **1.264** bytes cambiados en **6** sitios · IPS de **1.302** bytes · todo en espacio que el cartucho no usa · no se distribuye ninguna ROM
 
-![La primera página del tutorial](../imagenes/tutorial_1.png)
+![El tutorial: el menú, F1, las cinco páginas y de vuelta al menú](../imagenes/tutorial.gif)
 
 ## Cómo se usa
 

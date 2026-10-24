@@ -4,7 +4,7 @@
 
 **1,264** bytes changed in **6** places · **1,302**-byte IPS · all in space the cartridge does not use · no ROM distributed
 
-![The first page of the tutorial](imagenes/tutorial_1.png)
+![The tutorial: the menu, F1, the five pages and back to the menu](imagenes/tutorial.gif)
 
 ## How to use it
 
