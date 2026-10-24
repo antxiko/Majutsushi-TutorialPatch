@@ -145,6 +145,42 @@ class ConRom(unittest.TestCase):
                     self.assertIn(t.rom[o], pares, sitio)
                 o += 1
 
+    def test_los_mapas_nuevos_se_leen_enteros(self):
+        """El logotipo (p11:A453) y el fondo de la demo (p15:AAA0) se releen con las mismas casillas
+        que el original: un literal de 127 llevaria la cabecera 0xFF, que es el final del mapa."""
+        import fondo_demo
+        import logotipo
+        t = self.traducida()
+        for mod in (logotipo, fondo_demo):
+            xy0, c0, _ = mod.lee_mapa(t.base)
+            xy1, c1, _ = mod.lee_mapa(t.rom)
+            self.assertEqual((xy1, sorted(c1)), (xy0, sorted(c0)), mod.__name__)
+        tiles = fondo_demo.lee_tiles(t.rom)
+        self.assertTrue(set(fondo_demo.lee_mapa(t.rom)[1].values()) <= set(tiles))
+
+    def test_las_caras_solo_cambian_los_man_y_los_vientos(self):
+        """En los cuatro juegos de fichas, los nueve 萬 y los cuatro vientos son todos distintos entre
+        si y distintos del original; las otras 22 fichas, punto a punto las del cartucho."""
+        import caras
+        t = self.traducida()
+        cambian = set(caras.MAN) | set(caras.VIENTOS)
+        for lista, paletas, disp, w, h, _ in caras.JUEGOS:
+            fichas = []
+            for rom in (t.base, t.rom):
+                gs = caras.grupos(rom, lista, paletas)
+                hoja = {g["c"] + k: caras.lee_tile(rom, g, k) for g in gs for k in range(g["n"])}
+                fichas.append([caras.compone(c, w, hoja) for _, c in caras.disposicion(rom, disp, w, h)])
+            antes, ahora = fichas
+            self.assertEqual(len(ahora), 35)
+            for i in range(35):
+                if i in cambian:
+                    self.assertNotEqual(ahora[i], antes[i], (hex(disp), i))
+                else:
+                    self.assertEqual(ahora[i], antes[i], (hex(disp), i))
+            for grupo in (caras.MAN, caras.VIENTOS):
+                vistas = [str(ahora[i]) for i in grupo]
+                self.assertEqual(len(set(vistas)), len(vistas), hex(disp))
+
     def test_el_ips_solo_cambia_lo_declarado(self):
         """Cada byte que cambia un registro del IPS cae en un trozo del tutorial o en un sitio de la
         traduccion (un registro puede llevar bytes iguales entre dos cambios cercanos)."""

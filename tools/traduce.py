@@ -415,6 +415,22 @@ class Traduccion:
         self.pon_tiles()
         zonas, usado = rotulos.aplica(self.rom)
         self.zonas += zonas
+        import demo
+        zonas, linea = demo.aplica(self.rom)
+        self.zonas += zonas
+        self.informe.append(linea)
+        import logotipo
+        zonas, linea = logotipo.aplica(self.rom)
+        self.zonas += zonas
+        self.informe.append(linea)
+        import fondo_demo
+        zonas, linea = fondo_demo.aplica(self.rom)
+        self.zonas += zonas
+        self.informe.append(linea)
+        import caras
+        zonas, linea = caras.aplica(self.rom)
+        self.zonas += zonas
+        self.informe.append(linea)
         self.informe.append("rotulos de las llamadas: %d de %d bytes" % (usado, rotulos.ZONA[1] - rotulos.ZONA[0]))
         self.informe.append("letras de 16 puntos: %d nuevas + %d redibujadas, %d libres" % (
             len(self.codigo), len(self.reservado),
