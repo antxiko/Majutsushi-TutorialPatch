@@ -1,59 +1,68 @@
-# Hai no Majutsushi — parche tutorial
+# Hai no Majutsushi — traducción al inglés y tutorial
 
 *[English](README.md)*
 
-牌の魔術師 (*Hai no Majutsushi - Mahjong 2*; Konami, 1989, RC-765) es un mahjong para MSX2 con todos sus menús y mensajes en japonés. Este parche le añade un **tutorial en inglés**, dibujado con las fichas, las letras y los kanji del propio juego: con **F1** en el primer menú, nueve pantallas enseñan las fichas, los vientos y dragones, el objetivo, las combinaciones, las llamadas, el riichi y el tsumo, qué es cada opción de los menús y las teclas de la música. Espacio pasa de pantalla; tras la última se vuelve al menú. El resto del juego no cambia.
+牌の魔術師 (*Hai no Majutsushi - Mahjong 2*; Konami, 1989, RC-765) es un mahjong para MSX2 con todos sus menús y mensajes en japonés. Este parche pone **en inglés todo lo que hay que leer para jugar** —los menús, las pantallas de reglas y de estilo, los nombres de los rivales, los menús de llamada, los yaku y los puntos, los avisos de fin de mano y los rótulos rojos PON! / CHI! / KAN! / RON! / TSUMO! / RIICHI!— y añade un **tutorial** con **F1** en el primer menú: nueve pantallas sobre las fichas, el objetivo, las combinaciones, las llamadas, el riichi y el tsumo, los menús y las teclas de la música.
 
-**1.313** bytes cambiados en **6** sitios · IPS de **1.351** bytes · todo en espacio que el cartucho no usa · no se distribuye ninguna ROM
+**15.508** bytes cambiados · IPS de **15.936** bytes · 144 letras nuevas, 35 tiles pequeños nuevos, 6 rótulos nuevos · no se distribuye ninguna ROM
 
 ![El tutorial: el menú, F1, las nueve pantallas y de vuelta al menú](docs/imagenes/tutorial.gif)
 
-## Cómo se usa
-
-1. En el título, espacio: sale el primer menú (練習対局, práctica; 実戦対局, partida de verdad).
-2. **F1**. Se abre el tutorial.
-3. **Espacio** para la pantalla siguiente. Tras la novena vuelve el menú y el juego sigue como siempre.
+| Japonés | Inglés |
+|---|---|
+| ![primer menú, en japonés](docs/imagenes/modo_jp.png) | ![primer menú, en inglés](docs/imagenes/modo_en.png) |
+| ![menú de ajustes, en japonés](docs/imagenes/ajustes_jp.png) | ![menú de ajustes, en inglés](docs/imagenes/ajustes_en.png) |
+| ![reglas, en japonés](docs/imagenes/reglas_jp.png) | ![reglas, en inglés](docs/imagenes/reglas_en.png) |
+| ![estilo de los rivales, en japonés](docs/imagenes/estilo_jp.png) | ![estilo de los rivales, en inglés](docs/imagenes/estilo_en.png) |
 
 | | | |
 |---|---|---|
-| ![cómo se juega](docs/imagenes/tutorial_1.png) | ![las fichas](docs/imagenes/tutorial_2.png) | ![vientos y dragones](docs/imagenes/tutorial_3.png) |
-| ![el objetivo](docs/imagenes/tutorial_4.png) | ![las combinaciones](docs/imagenes/tutorial_5.png) | ![las llamadas](docs/imagenes/tutorial_6.png) |
-| ![riichi y tsumo](docs/imagenes/tutorial_7.png) | ![los menús](docs/imagenes/tutorial_8.png) | ![los rivales y la música](docs/imagenes/tutorial_9.png) |
+| ![el sorteo de asientos](docs/imagenes/partida_sorteo.png) | ![el menú de llamada](docs/imagenes/partida_llamada.png) | ![PON!](docs/imagenes/partida_pon.png) |
+| ![los yaku y los puntos](docs/imagenes/partida_yaku.png) | ![una mano nula](docs/imagenes/partida_aborto.png) | |
+
+## Cómo se usa
+
+1. En el título, espacio: sale el primer menú (PRACTICE, MATCH).
+2. **F1** abre el tutorial; **espacio** pasa de pantalla, y tras la novena vuelve el menú.
+3. En PRACTICE, **abajo** en tu turno abre un cuadro con SCORE y OPEN (OPEN enseña las manos de los rivales).
 
 ## Qué hace falta
 
 - **La ROM del juego**, que este repositorio no distribuye: *Hai no Majutsushi - Mahjong 2* (Konami, 1989, RC-765), 131.072 bytes, sha256 `7839c843dc787e01765c1ba3efbd26dcf5209d27e38bcee1345db3b3cffdf5db`.
-- Cualquier herramienta de IPS (Lunar IPS, Floating IPS, RomPatcher.js). Se aplica [parche/majutsushi_tutorial.ips](parche/majutsushi_tutorial.ips) a la ROM y sale la parcheada, sha256 `340bc57b240a376eafd0467d7b5c8b09c3646966dd7591af70f704553f79a0e7`.
+- Cualquier herramienta de IPS (Lunar IPS, Floating IPS, RomPatcher.js). Se aplica [parche/majutsushi_en.ips](parche/majutsushi_en.ips) a la ROM y sale la parcheada, sha256 `334c944a39b3e36eee541c01c7b38b0a6d29704442bd6e24cbae06ee818899ff`.
 
 En openMSX el cartucho necesita su mapper (Konami con DAC):
 
 ```
-openmsx -machine C-BIOS_MSX2 -cart majutsushi_tutorial.rom -romtype Majutsushi
+openmsx -machine C-BIOS_MSX2 -cart majutsushi_en.rom -romtype Majutsushi
 ```
 
-## Montarlo
+## Cómo se monta
 
-Con Python 3 y [pasmo](https://pasmo.speccy.org/) en el PATH, y la ROM en la raíz como `majutsushi.rom`:
+Con Python 3, Pillow y [pasmo](https://pasmo.speccy.org/) en el PATH, y la ROM en la raíz como `majutsushi.rom`:
 
 ```
 python tools/construye.py majutsushi.rom
 ```
 
-Ensambla [src/tutorial.asm](src/tutorial.asm), comprueba que cada sitio donde escribe tiene lo que tiene el cartucho original (o 0xFF donde usa espacio libre) y escribe `work/majutsushi_tutorial.rom` y el IPS. Cualquier otra ROM la rechaza. Las pantallas se escriben en [tools/textos.py](tools/textos.py), que las empaqueta en `src/datos.inc` y no deja pasar ningún renglón ni fila de fichas que no quepa en la pantalla. `python -m unittest discover -s tests` pasa los 7 tests.
+Ensambla el tutorial ([src/tutorial.asm](src/tutorial.asm)), aplica la traducción de [traduccion/textos_en.txt](traduccion/textos_en.txt) con [tools/traduce.py](tools/traduce.py), comprueba que en cada sitio que escribe está lo que tiene el cartucho original y escribe `work/majutsushi_en.rom` y el IPS. Rechaza cualquier otra ROM. `python -m unittest discover -s tests` pasa los 13 tests. Lo que se midió antes de traducir (cada texto, cómo se dibuja, dónde está, cuánto sitio hay) está en [traduccion/inventario.md](traduccion/inventario.md).
 
 ## Cómo funciona
 
-- **El gancho.** El primer menú corre a cada cuadro desde p00:4396 (la entrada 1 de la tabla de estados de p00:4313). Ese bloque, con el sonido del cursor y el dibujo del cursor detrás, son 61 bytes. El parche lo escribe de nuevo en los mismos 61 bytes: `bit 4,a` en vez de `ld c,a / and 10h / ld a,c`, y los dos sprites del cursor escritos con `ld l,4` en vez de alternar HL y HL' con `exx`. Así queda sitio para mirar F1 al entrar (el bit 0 de 0xC00C, las teclas de función recién pulsadas) y para el salto al tutorial. El cursor y su sonido se mueven unos bytes, así que se corrigen las tres instrucciones que entran en ellos (p00:436F, 4834 y 483B). Nada más cambia en el banco 0.
-- **Todo lo que se ve es del juego.** El tutorial carga primero lo que carga el juego para empezar una mano: la hoja de fichas y su paleta (p00:5746) y las letras y los katakana (p00:5A22), en la página 1 de la memoria de vídeo. Cada ficha (24 × 18 puntos), cada letra (16 × 8) y cada katakana es luego una copia del VDP desde ahí con la rutina del propio cartucho (p00:5151). Los kanji de los menús los escribe la rutina de textos del juego (p00:5ACD) con las cadenas que el cartucho ya tiene en el banco 0 (p00:438C, 4391 y la lista de p00:59F5). Así que el parche no lleva ni una fuente ni un dibujo.
-- **La vuelta de las rutinas del juego.** Cargar la mesa y escribir kanji cambian de banco, y acaban con los bancos 1-2-3 puestos, que le quitarían al tutorial el suelo de debajo. El tutorial las llama dejando p00:4246 como su dirección de vuelta: esa rutina vuelve a poner los bancos 13-14-15 y vuelve al tutorial.
-- **Empaquetado para que quepa.** El texto va de tres letras en dos bytes (cinco bits cada una, con una tabla de 30 caracteres: las letras, los dígitos y el guion); los katakana y las fichas ocupan un byte cada uno, y los kanji tres. Las nueve pantallas son 961 bytes. Con el código llenan 1.140 de los 1.157 bytes de 0xFF del final del banco 14 (0xBB7B), y el resto del código ocupa 110 de los 117 de p15:AD8B.
-- **El espacio libre está medido.** En 15 minutos de openMSX entre título, menús y partida, con un punto de vigilancia en cada lectura de la ROM, nadie lee los 0xFF del final del banco 14 ni los de p15:AD8B.
-- Al salir, el tutorial deja el menú en el paso 0, para que se vuelva a dibujar, y repone los bancos 1-2-3, que son los que tiene el menú (medido en openMSX).
-- Las direcciones salen del [desensamblado comentado de Hai no Majutsushi](https://antxiko.github.io/Majutsushi-disassembly/es/).
+El juego escribe de tres maneras, y cada una se traduce a su manera.
+
+- **Las letras de 16 puntos** (menús, reglas, yaku, puntos; la rutina de p00:5ACD). Cada letra son 32 × 16 puntos de SCREEN 7 en 64 bytes (bancos 5-6), y la fuente tiene 189. La traducción las dibuja de nuevo como **parejas de letras** —el alfabeto Konami de 8 × 8 al doble, dos por casilla de kanji— o tres o cuatro más estrechas donde no hay sitio (las etiquetas de estilo, HAN, PTS). 144 casillas son nuevas; las letras que el código pinta sueltas se redibujan en su sitio: los numerales 一 a 十 de los han pasan a cifras, 東南西北 a E S W N, 家 a SEAT, 飜 a HAN, 点 a PTS. Las cifras y el ○ y el × de las reglas se quedan como están.
+- **Las cadenas cambian de sitio.** El inglés pide más bytes que los kanji. Las cadenas de cada banco se colocan de nuevo en el sitio de las viejas y se corrige cada puntero (el `ld hl` de cada llamada, la tabla de yaku de p01:6664, las de límites de p01:6640 y 664E). Los yaku no caben en el banco 1: los que sobran van a los bytes libres del final del banco 4. La rutina de texto pone los bancos 5-6 para cada letra y al volver deja los 1-2-3, así que una cadena del banco 4 solo se leería hasta su primera letra: las tres llamadas que escriben nombres de las tablas (p04:A9B0, AE1E, AA41) pasan antes por una rutina de 36 bytes en p04:BF97 que copia la cadena a la pila y la escribe desde allí. Tres ventanas han pedido cambiar un byte: la pantalla de reglas escribe 12 textos en vez de 16, su segunda columna se mueve seis puntos a la derecha y la primera cuatro a la izquierda para que quepa SHIISANPUTAA, y SCREEN va centrado en su recuadro.
+- **Los tiles de 8 × 8** (menús de llamada, nombres; la rutina de listas de p00:5363). La hoja de tiles ya trae el alfabeto latino entero: PON, CHI, KAN, RON, OPEN, HIDE y DRAW se escriben con él. Los 37 tiles de katakana (p07:6138) se dibujan de nuevo como 35 tiles de **dos letras estrechas**, y así los nombres y RIICHI, TSUMO, SCORE y LEFT caben en los mismos bytes que el katakana. Los nombres se cambian en las once listas donde salen (elección de rivales, estilo, resultados y la presentación de la demo).
+- **Los rótulos de las llamadas** (p00:58A2) son 16 patrones de sprite por palabra, comprimidos en RLE: letras rojas encima y un contorno oscuro debajo. Los seis se dibujan de nuevo con una letra gruesa inclinada; el sprite del contorno es la silueta entera un punto más gorda (la roja la tapa), que comprime mejor: 1.970 bytes donde los seis viejos ocupaban 2.411.
+- **El tutorial** es el de la versión anterior de este parche, con las pantallas de llamadas, riichi/tsumo y menús escritas de nuevo en inglés tal como las enseña ahora el juego (antes apuntaban al katakana y a los kanji). Su gancho en el primer menú es el mismo: los 61 bytes de p00:4396 escritos de nuevo en el mismo sitio, y las pantallas en los bytes libres del final del banco 14 y de p15:AD8B.
+- Las direcciones salen del [desensamblado comentado de Hai no Majutsushi](https://antxiko.github.io/Majutsushi-disassembly/).
+
+Lo que queda en japonés: los rótulos de la presentación de la demo (el título y la frase de cada rival), el logotipo, el 麻雀 grande del fondo y las caras de las fichas (萬 y los vientos, como en las fichas de verdad).
 
 ## Probado
 
-En openMSX (C-BIOS MSX2): F1 en el primer menú abre el tutorial, las nueve pantallas pasan con espacio, vuelve el menú, el cursor sube y baja y al elegir práctica y luego 終了 empieza una partida como siempre. Aún sin probar en un MSX de verdad.
+En openMSX (C-BIOS MSX2), con las capturas hechas con el throttle puesto: el primer menú y el de ajustes, reglas, estilo y elección de rivales, el sorteo de asientos, el recuadro de la ronda, los menús de llamada (con el descarte de un rival, en tu turno, el cuadro de pausa con SCORE, OPEN y LEFT), las listas de yaku con FU, HAN y PTS (los yaku más raros forzados desde el depurador para ver los del banco 4), DRAW, GAME END, NEXT y QUIT, la tabla de resultados, los nombres de la presentación, los rótulos PON! y CHI! y las nueve pantallas del tutorial. Mirado solo en el código y midiendo las ventanas, sin verlo en pantalla: 9 TERMINALS, 4 WINDS, 4 RIICHI, 4 KANS, 3 RON y el menú SAVE del disco. Sin probar todavía en un MSX de verdad.
 
 ## Licencia
 

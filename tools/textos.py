@@ -2,9 +2,10 @@
 """Las pantallas del tutorial: de aqui sale src/datos.inc (bytes para pasmo).
 
 Todo lo que se dibuja sale de la pagina 1 de la VRAM tal como la deja la mesa del juego
-(p00:5746 y p00:5A22): el alfabeto y los katakana de las filas 0xB0-0xC8, de 16 x 8 puntos, y la
-hoja de fichas del jugador, de 24 x 18. Los kanji de los menus los escribe p00:5ACD con las cadenas
-que el cartucho ya tiene en el banco 0.
+(p00:5746 y p00:5A22): el alfabeto de las filas 0xB0-0xB8, de 16 x 8 puntos, y la hoja de fichas
+del jugador, de 24 x 18. Con la traduccion (tools/traduce.py) los katakana de la fila 0xC8 y los
+kanji de la letra de 16 puntos son otros: el tutorial ya no los usa, y escribe los menus y las
+llamadas como salen ahora en el juego.
 
 Formato (las X van en unidades de 2 puntos, como en las rutinas del VDP del cartucho):
     Y, X, elementos..., 0xFE      un renglon; Y = 0xFF acaba la pantalla y 0xFD tras ella, el tutorial
@@ -12,17 +13,17 @@ Formato (las X van en unidades de 2 puntos, como en las rutinas del VDP del cart
     0x01-0x7F                     letra: fila * 32 + columna en la rejilla de 0xB0 (avanza 8)
     0x80                          hueco entre grupos de fichas (avanza 6)
     0x81-0xB7                     la ficha (byte - 0x80): palo * 16 + numero (avanza 12)
-    0xC0, lo, hi                  el texto en kanji del banco 0 que empieza en esa direccion
+    0xC0, lo, hi                  el texto en kanji del banco 0 que empieza en esa direccion (el
+                                  codigo lo sabe dibujar; las pantallas ya no lo usan)
 
 Uso: textos.py src/datos.inc
 """
 import sys
 
 # la rejilla de letras de la pagina 1: fila 0 (Y 0xB0) espacio, 0-9, A-I; fila 1 (Y 0xB8) J-Z,
-# (c), -; fila 3 (Y 0xC8) los katakana ポ ン チ ー カ ロ リ ツ モ
+# (c), -
 FILA0 = " 0123456789ABCDEFGHI"
 FILA1 = "JKLMNOPQRSTUVWXYZ@-"
-KATA = "ポンチーカロリツモ"
 
 # las fichas: palo 0 caracteres, 1 circulos, 2 bambues, 3 honores (1-4 vientos E S W N,
 # 5 blanco, 6 verde, 7 rojo)
@@ -35,20 +36,11 @@ def F(nombre):
 
 VIENTOS = {"E": 1, "S": 2, "W": 3, "N": 4, "BL": 5, "VE": 6, "RO": 7}
 
-# los kanji de los menus, en el banco 0 (p00:438C, p00:4391 y la lista de p00:59F5)
-KANJI = {
-    "renshuu": 0x438C, "jissen": 0x4391,
-    "seikaku": 0x59F7, "menzu": 0x59FE, "ruuru": 0x5A05, "gamen": 0x5A0D, "shuuryou": 0x5A14,
-}
-
-
 def letra(c):
     if c in FILA0:
         return FILA0.index(c)
     if c in FILA1:
         return 32 + FILA1.index(c)
-    if c in KATA:
-        return 96 + KATA.index(c)
     raise SystemExit("la letra %r no esta en la rejilla del cartucho" % c)
 
 
@@ -58,13 +50,10 @@ CINCO = " ABCDEFGHIKLMNOPQRSTUVWXY-0125"   # sin J ni Z, que no salen
 
 def texto(y, s, x=None):
     """Un renglon de texto; sin X va centrado. Las letras van de tres en tres en 16 bits
-    (0aaaaabb bbbccccc); los katakana, que no caben en los 5 bits, van en un renglon de bytes
-    que empieza con un hueco (0x80) para que el primer byte lo distinga."""
+    (0aaaaabb bbbccccc)."""
     if x is None:
         x = (256 - 8 * len(s)) // 2
     assert 0 <= x and x + 8 * len(s) <= 256, "el renglon %r se sale de la pantalla" % s
-    if any(c in KATA for c in s):
-        return [y, x - 6, 0x80] + [letra(c) for c in s] + [0xFE]
     cod = [CINCO.index(c) + 1 for c in s] + [0]
     while len(cod) % 3:
         cod.append(0)
@@ -93,11 +82,6 @@ def ancho_fichas(grupos):
 
 def centradas(y, grupos):
     return fichas(y, (256 - ancho_fichas(grupos)) // 2, grupos)
-
-
-def kanji(y, x, nombre):
-    a = KANJI[nombre]
-    return [y, x, 0xC0, a & 0xFF, a >> 8, 0xFE]
 
 
 FIN = [0xFF]
@@ -151,30 +135,29 @@ PANTALLAS = [
     # 6
     texto(8, "CALLING")
     + texto(26, "WHEN A RIVAL THROWS")
-    + texto(53, "ポン", 16) + fichas(48, 56, "s2 s2 | s2") + texto(53, "A TRIPLET", 130)
-    + texto(83, "チー", 16) + fichas(78, 56, "m3 m4 | m5") + texto(83, "A RUN", 130)
-    + texto(113, "カン", 16) + fichas(108, 56, "N N N | N") + texto(113, "FOUR", 130)
-    + texto(143, "ロン", 16) + fichas(138, 56, "p9") + texto(143, "YOU WIN WITH IT", 80)
+    + texto(53, "PON", 16) + fichas(48, 56, "s2 s2 | s2") + texto(53, "A TRIPLET", 130)
+    + texto(83, "CHI", 16) + fichas(78, 56, "m3 m4 | m5") + texto(83, "A RUN", 130)
+    + texto(113, "KAN", 16) + fichas(108, 56, "N N N | N") + texto(113, "FOUR", 130)
+    + texto(143, "RON", 16) + fichas(138, 56, "p9") + texto(143, "YOU WIN WITH IT", 80)
     + texto(176, "A BOX OPENS - PICK WITH SPACE")
     + FIN,
     # 7
     texto(8, "RIICHI AND TSUMO")
-    + texto(32, "リーチ", 16) + texto(32, "CLOSED AND READY", 48)
+    + texto(32, "RIICHI", 16) + texto(32, "CLOSED AND READY", 80)
     + centradas(48, "m1 m2 m3 p4 p5 p6 s7 s8 s9 E E m4 m5 | m6")
     + texto(78, "BET 1000 - ONE TILE TO WIN")
-    + texto(116, "ツモ", 16) + texto(116, "WIN ON YOUR OWN DRAW", 48)
+    + texto(116, "TSUMO", 16) + texto(116, "WIN ON YOUR OWN DRAW", 72)
     + centradas(132, "m6")
     + FIN,
     # 8
-    texto(4, "THE MENUS")
-    + kanji(20, 24, "renshuu") + texto(24, "PRACTICE", 112)
-    + kanji(40, 24, "jissen") + texto(44, "REAL GAME", 112)
-    + kanji(68, 24, "seikaku") + texto(72, "RIVALS STYLE", 112)
-    + kanji(88, 24, "menzu") + texto(92, "CHOOSE RIVALS", 112)
-    + kanji(108, 24, "ruuru") + texto(112, "RULES", 112)
-    + kanji(128, 24, "gamen") + texto(132, "SCREEN", 112)
-    + kanji(148, 24, "shuuryou") + texto(152, "PLAY", 112)
-    + texto(182, "UP AND DOWN THEN SPACE")
+    texto(8, "THE MENUS")
+    + texto(34, "STYLE - HOW EACH RIVAL PLAYS")
+    + texto(52, "RIVALS - PICK THREE")
+    + texto(70, "RULES - OPTIONAL RULES")
+    + texto(88, "SCREEN - MOVE THE PICTURE")
+    + texto(106, "DONE - START")
+    + texto(146, "IN PRACTICE PRESS DOWN ON YOUR")
+    + texto(164, "TURN - OPEN SHOWS THEIR HANDS")
     + FIN,
     # 9
     texto(8, "THE RIVALS LEARN")

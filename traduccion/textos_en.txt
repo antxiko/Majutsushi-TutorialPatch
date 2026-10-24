@@ -1,0 +1,196 @@
+# Traduccion al ingles de Hai no Majutsushi: la tabla que lee tools/traduce.py.
+# Las cuentas y de donde sale cada direccion: traduccion/inventario.md.
+#
+# FUENTE DE 16 PUNTOS (p00:5ACD). Un texto entre comillas se parte en casillas de dos letras
+# (alfabeto Konami 8 x 8 al doble); con '|' las casillas son los trozos: de 1-2 letras anchas, de
+# 3 estrechas (10 puntos) o de 4 mas estrechas (8 puntos). {XX} = el codigo XX tal cual.
+#
+#   grupo NOMBRE banco=B cpu=BASE huecos=DESDE-HASTA[,...] [banco2=B cpu2=BASE huecos2=...]
+#       las cadenas del grupo se colocan en sus huecos (los bytes viejos de las cadenas japonesas)
+#   cadena ref=B:DIR[,B:DIR...] "TEXTO"            DIR = la palabra que apunta a la cadena
+#   bloque ref=B:DIR  XX,YY "TEXTO" | XX,YY "TEXTO" ...   registros X, Y, texto, 0xFF seguidos
+#
+# LETRAS REDIBUJADAS: los codigos que el juego pinta sueltos (cifras, han, vientos...).
+#   letra XX "TEXTO" [centro]          letra XX copia NN[+MM] = la letra NN del cartucho (+ la
+#                                      mitad izquierda de MM a la derecha)
+#   reserva XX[-YY] ...                letras que no se tocan
+#
+# TILES 8 x 8 (p00:5363). Cambios en su sitio, mismos bytes:
+#   tiles B:DIR ORIGINAL = NUEVO     NUEVO: "LETRAS" enteras de la hoja (A-Z, 0-9), {AB} un tile
+#                                    con dos letras estrechas, 00 un tile en blanco
+#   nombre ORIGINAL = NUEVO          cambia el nombre en todas las listas de nombres
+#
+# OTROS: byte B:DIR VIEJO = NUEVO    un byte de codigo (un contador que cambia)
+#
+# Anchos medidos (ventana y X del texto): menu del modo 4 casillas, 半荘終了 4 (ventana
+# 0x58-0xA8, texto en 0x60), 続行/終了 2 (texto en 0x78), yaku 8 (0x30 a 0xB0), estilo 2.
+
+# ------------------------------------------------------------------ letras sueltas
+# reserva: letras que el codigo pinta sueltas y se quedan como estan (las cifras de los puntos y
+# los fu; el ○ y el × de las reglas, p03:A9FB)
+reserva 01-0A 47 48
+letra 0B copia 01
+letra 0C copia 02
+letra 0D copia 03
+letra 0E copia 04
+letra 0F copia 05
+letra 10 copia 06
+letra 11 copia 07
+letra 12 copia 08
+letra 13 copia 09
+letra 14 copia 01+0A
+letra 15 "E" centro
+letra 16 "S" centro
+letra 17 "W" centro
+letra 18 "N" centro
+letra 1B "SEAT"
+letra 2F ""
+letra 72 "HAN"
+letra 91 "PTS"
+
+# ------------------------------------------------------------------ banco 0: menus
+grupo p00 banco=0 cpu=4000 huecos=438C-4395,4765-4769,481E-4823,59F5-5A21
+cadena ref=0:4358 "PRACTICE"
+cadena ref=0:4361 "MATCH"
+bloque ref=3:B3FD 58,30 "STYLE" | 58,48 "RIVALS" | 58,60 "RULES" | 58,78 "SCREEN" | 58,90 "DONE"
+bloque ref=3:BBE5 58,54 "SAVE" | 58,6C "DONE"
+cadena ref=0:4758 "GAME END"
+cadena ref=0:4803 "NEXT"
+cadena ref=0:480C "QUIT"
+
+# ------------------------------------------------------------------ banco 2: el sorteo
+grupo p02 banco=2 cpu=8000 huecos=8FFF-9001
+cadena ref=2:8FFA "TMP|{15}"
+
+# ------------------------------------------------------------------ banco 1: ajuste de la imagen
+grupo ajuste banco=1 cpu=6000 huecos=647F-6483
+byte 1:63F9 60 = 68
+cadena ref=1:63FB "SCREEN"
+
+# ------------------------------------------------------------------ banco 3: reglas, estilo, abortos
+grupo reglas banco=3 cpu=A000 huecos=A96E-A9C9
+byte 3:A95D 10 = 0C
+# la segunda columna de marcas (tabla X, Y de p03:A9FF, opciones 5-9) dos puntos a la derecha para
+# que quepa SHIISANPUTAA en la primera
+byte 3:AA09 88 = 8E
+byte 3:AA0B 88 = 8E
+byte 3:AA0D 88 = 8E
+byte 3:AA0F 88 = 8E
+byte 3:AA11 88 = 8E
+bloque ref=3:A95F 6C,08 "RULES" | 2C,30 "KUITAN" | 2C,48 "TSUMO PINFU" | 2C,60 "SHIISANPUTAA" | 2C,78 "NAGASHI" | 2C,90 "PAARENCHAN" | A2,30 "SUURENKOU" | A2,48 "DAISHARIN" | A2,60 "KAN URA" | A2,78 "DOUBLE RON" | A2,90 "2 HAN MIN" | 70,A8 "DONE"
+grupo estilo banco=3 cpu=A000 huecos=B33B-B362
+bloque ref=3:B328 08,58 "RIIC|HI" | 08,78 "CALL|S" | 08,98 "TANY|AO" | 08,B8 "FLUS|H" | 88,58 "TOIT|OI" | 88,78 "KOKU|SHI" | 88,98 "FOLD" | B0,B8 "DONE"
+grupo abortos banco=3 cpu=A000 huecos=B7B5-B7D0
+cadena ref=3:B689 "DRAW"
+cadena ref=3:B710 "9 TERMINALS"
+cadena ref=3:B6C8 "4 WINDS"
+cadena ref=3:B747 "4 RIICHI"
+cadena ref=3:B72D "4 KANS"
+cadena ref=3:B758 "3 RON"
+
+# ------------------------------------------------------------------ banco 1 (y 4): la puntuacion
+# Las tablas 0x6640, 0x664E y 0x6664 se quedan. Lo que no cabe en p01 va al final de p04 (0xFF de
+# cola desde 0xBF97), pero la rutina de texto (p00:5ACF) pone los bancos 5-6 para cada letra y al
+# volver deja los 1-2-3: una cadena del banco 4 solo se lee bien hasta la primera letra. Por eso
+# las tres llamadas que escriben nombres de las tablas (p04:A9B0 yaku, AE1E el 0x35, AA41 limites)
+# pasan por una rutina nueva en p04:BF97 que copia la cadena a la pila y la escribe desde alli:
+#   push ix / ld ix,-16 / add ix,sp / ld sp,ix / push ix / push de
+#   1: ld a,(hl) / ld (ix+0),a / inc hl / inc ix / inc a / jr nz,1b
+#   pop de / pop hl / call 5AB1 / ld hl,16 / add hl,sp / ld sp,hl / pop ix / ret
+# La linea de fu y han (p04:A9F5, con su color por p00:5AB8) no pasa por ella: solo=1.
+bytes 4:BF97 libre = DD E5 DD 21 F0 FF DD 39 DD F9 DD E5 D5 7E DD 77 00 23 DD 23 3C 20 F6 D1 E1 CD B1 5A 21 10 00 39 F9 DD E1 C9
+bytes 4:A9B0 CD B1 5A = CD 97 BF
+bytes 4:AE1E CD B1 5A = CD 97 BF
+bytes 4:AA41 CD B1 5A = CD 97 BF
+grupo yaku banco=1 cpu=6000 huecos=663B-663F,6646-664D,6658-6663,66D0-67BE banco2=4 cpu2=A000 huecos2=BFBB-BFFF
+cadena ref=4:A9F6 solo=1 " F|U |  |{72}"
+cadena ref=1:6640,1:6642,1:6656 "YAKUMAN"
+cadena ref=1:6644,1:664E "MANGAN"
+cadena ref=1:6650 "HANEMAN"
+cadena ref=1:6652 "BAIMAN"
+cadena ref=1:6654 "SANBAIMAN"
+cadena ref=1:6664,1:6666,1:66A0,1:66A2 "RIICHI"
+cadena ref=1:6668 "RIICHI IPPATSU"
+cadena ref=1:666A "PINFU"
+cadena ref=1:666C "MENZEN TSUMO"
+cadena ref=1:666E "TANYAO"
+cadena ref=1:6670 "IIPEIKOU"
+cadena ref=1:6672 "YAKUHAI"
+cadena ref=1:6674 "RINSHAN KAIHOU"
+cadena ref=1:6676 "HAITEI"
+cadena ref=1:6678 "HOUTEI"
+cadena ref=1:667A "CHANKAN"
+cadena ref=1:667C "DOUBLE RIICHI"
+cadena ref=1:667E "CHIITOITSU"
+cadena ref=1:6680 "TOITOI"
+cadena ref=1:6682 "RYANPEIKOU"
+cadena ref=1:6684 "ITTSU"
+cadena ref=1:6686 "SANSHOKU"
+cadena ref=1:6688 "CHANTA"
+cadena ref=1:668A "SANANKOU"
+cadena ref=1:668C "SANKANTSU"
+cadena ref=1:668E "SANRENKOU"
+cadena ref=1:6690 "SANSHOKU DOUKOU"
+cadena ref=1:6692 "SHOUSANGEN"
+cadena ref=1:6694 "HONROUTOU"
+cadena ref=1:6696 "HONITSU"
+cadena ref=1:6698 "JUNCHAN"
+cadena ref=1:669A "CHINITSU"
+cadena ref=1:669C "DORA"
+cadena ref=1:669E "W RIICHI IPPATSU"
+cadena ref=1:66A4 "SUUANKOU"
+cadena ref=1:66A6 "SUUKANTSU"
+cadena ref=1:66A8 "DAISANGEN"
+cadena ref=1:66AA "SHOUSUUSHII"
+cadena ref=1:66AC "TSUUIISOU"
+cadena ref=1:66AE "CHINROUTOU"
+cadena ref=1:66B0 "RYUUIISOU"
+cadena ref=1:66B2 "CHUUREN POUTOU"
+cadena ref=1:66B4 "KOKUSHI MUSOU"
+cadena ref=1:66B6 "TENHOU"
+cadena ref=1:66B8 "CHIIHOU"
+cadena ref=1:66BA "RENHOU"
+cadena ref=1:66BC "SUURENKOU"
+cadena ref=1:66BE "DAISHARIN"
+cadena ref=1:66C0 "NAGASHI MANGAN"
+cadena ref=1:66C2 "SHIISANPUTAA"
+cadena ref=1:66C4 "SUUANKOU TANKI"
+cadena ref=1:66C6 "KOKUSHI 13 WAIT"
+cadena ref=1:66C8 "DAISUUSHII"
+cadena ref=1:66CA "JUNSEI CHUUREN"
+cadena ref=1:66CC "PAARENCHAN"
+cadena ref=1:66CE "CHOMBO"
+
+# ------------------------------------------------------------------ tiles: menus de la partida
+tiles 2:98EC 60 00 61 = "PON"
+tiles 2:98F2 62 00 63 = "CHI"
+tiles 2:98F8 64 00 61 = "KAN"
+tiles 2:98FE 65 00 61 = "RON"
+tiles 2:990B 64 00 61 = "KAN"
+tiles 2:9911 66 63 62 = {RI}{IC}{HI}
+tiles 2:9917 67 00 68 = {TS}{UM}{O }
+tiles 2:9D17 69 6A 6B 6C = "DRAW"
+tiles 1:6103 70 71 72 63 = {SC}{OR}{E } 00
+tiles 1:610A 6A 63 6D 61 = "OPEN"
+tiles 1:6118 70 71 72 63 = {SC}{OR}{E } 00
+tiles 1:611F 6E 65 63 6F = "HIDE"
+tiles 1:612D 70 71 72 63 = {SC}{OR}{E } 00
+tiles 1:613B 70 71 72 63 = {SC}{OR}{E } 00
+tiles 1:6142 81 71 66 = {LE}{FT} 00
+tiles 3:A69E 83 = 00
+tiles 3:A6A4 83 84 = 00 00
+
+# ------------------------------------------------------------------ tiles: nombres de los rivales
+# en p03:AEB9 (eleccion), p03:B118 (estilo), p03:BD33 (resultados) y p04:B545.. (presentacion).
+# El relleno es un tile de par vacio ({  }): el 00 no esta en blanco en la hoja de la presentacion.
+listas 3:AEB9 3:B118 3:BD33 4:B545 4:B56C 4:B592 4:B5B8 4:B5E0 4:B605 4:B62E 4:B656
+nombre 73 68 61 = {SI}{MO}{N }
+nombre 72 77 65 78 79 63 7A = {AP}{HR}{OD}{IT}{E } {  } {  }
+nombre 72 77 65 78 79 32 7A = {AP}{HR}{OD}{IT}{E } {  } {  }
+nombre 70 7B 7C 62 7D 63 = {SN}{AT}{CH}{ER} {  } {  }
+nombre 70 7B 7C 62 7D 32 = {SN}{AT}{CH}{ER} {  } {  }
+nombre 7F 80 81 82 = {VE}{NO}{M } {  }
+nombre 74 7E 68 61 = {GO}{EM}{ON} {  }
+nombre 60 60 65 61 = {PO}{PO}{LO}{N }
+nombre 75 61 76 61 = {PE}{NG}{UI}{N }
+nombre 68 72 6C = {MO}{AI} {  }

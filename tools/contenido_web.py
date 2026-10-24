@@ -1,5 +1,5 @@
 """Lo que la web dice de este juego (la maquinaria de tools/ no nombra ninguno)."""
-NOMBRE = "Hai no Majutsushi — tutorial patch"
+NOMBRE = "Hai no Majutsushi — English translation and tutorial"
 COMPANIA = "Konami"
 ANIO = 1989
 REPOSITORIO = "https://github.com/antxiko/Majutsushi-TutorialPatch"

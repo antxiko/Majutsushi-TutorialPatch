@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""Monta el parche: ensambla src/tutorial.asm, mete cada trozo en su banco y escribe el IPS.
+"""Monta el parche: ensambla src/tutorial.asm, mete cada trozo en su banco, aplica la traduccion
+(tools/traduce.py con traduccion/textos_en.txt) y escribe el IPS.
 
 Los trozos (ver la cabecera de src/tutorial.asm), con la direccion de CPU y el banco que la ve, y lo
 que el cartucho tiene ahi (se comprueba antes de escribir; None = tiene que ser todo 0xFF).
 
-Uso: construye.py majutsushi.rom   (escribe work/majutsushi_tutorial.rom y parche/majutsushi_tutorial.ips)
+Uso: construye.py majutsushi.rom   (escribe work/majutsushi_en.rom y parche/majutsushi_en.ips)
 """
 import hashlib
 import os
 import shutil
 import subprocess
 import sys
+
+import traduce
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PASMO = shutil.which("pasmo") or r"C:\Users\Antxiko\AppData\Local\Programs\pasmo\pasmo.exe"
@@ -63,10 +66,12 @@ def main(argv):
         if original is not None and not viejo.hex().startswith(original):
             raise SystemExit("%04X no tiene lo esperado: %s" % (desde, viejo[:8].hex()))
         nueva[off:off + fin - desde] = binario[desde - ini:fin - ini]
-    salida = os.path.join(RAIZ, "work", "majutsushi_tutorial.rom")
+    for linea in traduce.aplica(nueva):
+        print(linea)
+    salida = os.path.join(RAIZ, "work", "majutsushi_en.rom")
     open(salida, "wb").write(nueva)
     print("ROM parcheada", hashlib.sha256(nueva).hexdigest(), "->", salida)
-    ips = os.path.join(RAIZ, "parche", "majutsushi_tutorial.ips")
+    ips = os.path.join(RAIZ, "parche", "majutsushi_en.ips")
     subprocess.run([sys.executable, os.path.join(RAIZ, "tools", "ips.py"), "make", argv[1], salida, ips], check=True)
     return 0
 
