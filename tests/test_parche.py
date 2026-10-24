@@ -45,12 +45,19 @@ class SinRom(unittest.TestCase):
             self.assertTrue(any(a <= off and off + n <= z for a, z in trozos), hex(off))
 
     def test_ninguna_linea_se_sale(self):
-        """30 caracteres por linea y 18 lineas por pagina caben en la pantalla."""
+        """Cada renglon y cada fila de fichas cabe en los 512 puntos (256 unidades) de la pantalla:
+        el generador lo comprueba al montar las pantallas, y las Y no pasan de las 212 lineas."""
         import textos
-        for p in textos.PAGINAS:
-            lineas = p.split("\n")
-            self.assertLessEqual(max(len(x) for x in lineas), 30)
-            self.assertLessEqual(len(lineas), 18)
+        datos = textos.bytes_tutorial()
+        self.assertEqual(datos[-1], 0xFD)
+        self.assertEqual(len(textos.PANTALLAS), 9)
+
+    def test_los_kanji_son_textos_del_banco_0(self):
+        """Las cadenas en kanji que se dibujan estan en el banco 0 (0x4000-0x5FFF), el unico que no
+        cambia mientras p00:5ACD cambia de banco."""
+        import textos
+        for a in textos.KANJI.values():
+            self.assertTrue(0x4000 <= a < 0x6000)
 
 
 class ConRom(unittest.TestCase):

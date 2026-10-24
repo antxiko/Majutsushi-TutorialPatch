@@ -1,116 +1,216 @@
 #!/usr/bin/env python3
-"""La fuente y las paginas del tutorial: de aqui sale src/datos.inc (bytes para pasmo).
+"""Las pantallas del tutorial: de aqui sale src/datos.inc (bytes para pasmo).
 
-La fuente son glifos de 8 x 8 a un bit por punto (el bit 7 es el de la izquierda), como los
-que dibuja p00:52A3 del cartucho. Las paginas van codificadas con el numero de glifo + 1;
-0 es un espacio, 0xFE baja de linea, 0xFF acaba la pagina y 0xFD acaba el tutorial.
+Todo lo que se dibuja sale de la pagina 1 de la VRAM tal como la deja la mesa del juego
+(p00:5746 y p00:5A22): el alfabeto y los katakana de las filas 0xB0-0xC8, de 16 x 8 puntos, y la
+hoja de fichas del jugador, de 24 x 18. Los kanji de los menus los escribe p00:5ACD con las cadenas
+que el cartucho ya tiene en el banco 0.
+
+Formato (las X van en unidades de 2 puntos, como en las rutinas del VDP del cartucho):
+    Y, X, elementos..., 0xFE      un renglon; Y = 0xFF acaba la pantalla y 0xFD tras ella, el tutorial
+    0x00                          espacio (8)
+    0x01-0x7F                     letra: fila * 32 + columna en la rejilla de 0xB0 (avanza 8)
+    0x80                          hueco entre grupos de fichas (avanza 6)
+    0x81-0xB7                     la ficha (byte - 0x80): palo * 16 + numero (avanza 12)
+    0xC0, lo, hi                  el texto en kanji del banco 0 que empieza en esa direccion
 
 Uso: textos.py src/datos.inc
 """
 import sys
 
-# 5 x 7 dentro de 8 x 8: columnas 1-5, filas 0-6
-G = {
-    "A": [".###.", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
-    "B": ["####.", "#...#", "#...#", "####.", "#...#", "#...#", "####."],
-    "C": [".###.", "#...#", "#....", "#....", "#....", "#...#", ".###."],
-    "D": ["####.", "#...#", "#...#", "#...#", "#...#", "#...#", "####."],
-    "E": ["#####", "#....", "#....", "####.", "#....", "#....", "#####"],
-    "F": ["#####", "#....", "#....", "####.", "#....", "#....", "#...."],
-    "G": [".###.", "#...#", "#....", "#.###", "#...#", "#...#", ".####"],
-    "H": ["#...#", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"],
-    "I": [".###.", "..#..", "..#..", "..#..", "..#..", "..#..", ".###."],
-    "J": ["..###", "...#.", "...#.", "...#.", "...#.", "#..#.", ".##.."],
-    "K": ["#...#", "#..#.", "#.#..", "##...", "#.#..", "#..#.", "#...#"],
-    "L": ["#....", "#....", "#....", "#....", "#....", "#....", "#####"],
-    "M": ["#...#", "##.##", "#.#.#", "#.#.#", "#...#", "#...#", "#...#"],
-    "N": ["#...#", "##..#", "#.#.#", "#..##", "#...#", "#...#", "#...#"],
-    "O": [".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
-    "P": ["####.", "#...#", "#...#", "####.", "#....", "#....", "#...."],
-    "Q": [".###.", "#...#", "#...#", "#...#", "#.#.#", "#..#.", ".##.#"],
-    "R": ["####.", "#...#", "#...#", "####.", "#.#..", "#..#.", "#...#"],
-    "S": [".####", "#....", "#....", ".###.", "....#", "....#", "####."],
-    "T": ["#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."],
-    "U": ["#...#", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."],
-    "V": ["#...#", "#...#", "#...#", "#...#", "#...#", ".#.#.", "..#.."],
-    "W": ["#...#", "#...#", "#...#", "#.#.#", "#.#.#", "##.##", "#...#"],
-    "X": ["#...#", "#...#", ".#.#.", "..#..", ".#.#.", "#...#", "#...#"],
-    "Y": ["#...#", "#...#", ".#.#.", "..#..", "..#..", "..#..", "..#.."],
-    "Z": ["#####", "....#", "...#.", "..#..", ".#...", "#....", "#####"],
-    "0": [".###.", "#...#", "#..##", "#.#.#", "##..#", "#...#", ".###."],
-    "1": ["..#..", ".##..", "..#..", "..#..", "..#..", "..#..", ".###."],
-    "2": [".###.", "#...#", "....#", "...#.", "..#..", ".#...", "#####"],
-    "3": ["####.", "....#", "....#", ".###.", "....#", "....#", "####."],
-    "4": ["...#.", "..##.", ".#.#.", "#..#.", "#####", "...#.", "...#."],
-    "5": ["#####", "#....", "####.", "....#", "....#", "#...#", ".###."],
-    "6": [".###.", "#....", "#....", "####.", "#...#", "#...#", ".###."],
-    "7": ["#####", "....#", "...#.", "..#..", ".#...", ".#...", ".#..."],
-    "8": [".###.", "#...#", "#...#", ".###.", "#...#", "#...#", ".###."],
-    "9": [".###.", "#...#", "#...#", ".####", "....#", "....#", ".###."],
-    ".": [".....", ".....", ".....", ".....", ".....", ".##..", ".##.."],
-    ",": [".....", ".....", ".....", ".....", ".##..", "..#..", ".#..."],
-    ":": [".....", ".##..", ".##..", ".....", ".##..", ".##..", "....."],
-    "-": [".....", ".....", ".....", "#####", ".....", ".....", "....."],
-    "!": ["..#..", "..#..", "..#..", "..#..", "..#..", ".....", "..#.."],
-    "?": [".###.", "#...#", "....#", "...#.", "..#..", ".....", "..#.."],
-    "'": ["..#..", "..#..", ".#...", ".....", ".....", ".....", "....."],
-    "/": ["....#", "....#", "...#.", "..#..", ".#...", "#....", "#...."],
+# la rejilla de letras de la pagina 1: fila 0 (Y 0xB0) espacio, 0-9, A-I; fila 1 (Y 0xB8) J-Z,
+# (c), -; fila 3 (Y 0xC8) los katakana ポ ン チ ー カ ロ リ ツ モ
+FILA0 = " 0123456789ABCDEFGHI"
+FILA1 = "JKLMNOPQRSTUVWXYZ@-"
+KATA = "ポンチーカロリツモ"
+
+# las fichas: palo 0 caracteres, 1 circulos, 2 bambues, 3 honores (1-4 vientos E S W N,
+# 5 blanco, 6 verde, 7 rojo)
+def F(nombre):
+    if nombre in VIENTOS:
+        return 0x30 + VIENTOS[nombre]
+    palo = {"m": 0, "p": 1, "s": 2}[nombre[0]]
+    return palo * 16 + int(nombre[1])
+
+
+VIENTOS = {"E": 1, "S": 2, "W": 3, "N": 4, "BL": 5, "VE": 6, "RO": 7}
+
+# los kanji de los menus, en el banco 0 (p00:438C, p00:4391 y la lista de p00:59F5)
+KANJI = {
+    "renshuu": 0x438C, "jissen": 0x4391,
+    "seikaku": 0x59F7, "menzu": 0x59FE, "ruuru": 0x5A05, "gamen": 0x5A0D, "shuuryou": 0x5A14,
 }
 
-PAGINAS = [
-    'HAI NO MAJUTSUSHI - TUTORIAL||RIICHI MAHJONG FOR FOUR. YOU|ARE THE PLAYER AT THE BOTTOM.||LEFT AND RIGHT CHOOSE THE|TILE, SPACE THROWS IT.||TO WIN: FOUR GROUPS AND A PAIR|WITH AT LEAST ONE YAKU.'.replace("|", chr(10)),
-    "THE TWO MENUS||FIRST: TOP LINE PRACTICE,|BOTTOM LINE REAL GAME.||SECOND, FROM TOP TO BOTTOM:|RIVALS' STYLE, CHOOSE THE|THREE RIVALS, RULES, SCREEN|ADJUST, PLAY.".replace("|", chr(10)),
-    'CALLS||WHEN A RIVAL THROWS A TILE|YOU CAN USE, A BOX OPENS:|PON, CHI, KAN OR RON. MOVE TO|ONE AND PRESS SPACE.||RIICHI: A CLOSED HAND WAITING|FOR ONE TILE, 1000 POINTS.'.replace("|", chr(10)),
-    'THE RIVALS LEARN||EACH RIVAL HAS SEVEN BARS:|RIICHI, CALLS, TANYAO, FLUSH,|TRIPLETS, KOKUSHI, FOLD.||YOUR WINS PUSH THEM TOWARDS|THE HANDS YOU WIN WITH.'.replace("|", chr(10)),
-    'MUSIC||IN PLAY F2, F3, F4 AND F5|CHANGE THE TUNE, F1 STOPS IT.||F1 ON THE FIRST MENU OPENS|THIS TUTORIAL. SPACE: NEXT.||ANTXIKO.GITHUB.IO'.replace("|", chr(10)),
+
+def letra(c):
+    if c in FILA0:
+        return FILA0.index(c)
+    if c in FILA1:
+        return 32 + FILA1.index(c)
+    if c in KATA:
+        return 96 + KATA.index(c)
+    raise SystemExit("la letra %r no esta en la rejilla del cartucho" % c)
+
+
+# los caracteres del texto empaquetado: el codigo de 5 bits es su posicion + 1 (0 acaba el renglon)
+CINCO = " ABCDEFGHIKLMNOPQRSTUVWXY-0125"   # sin J ni Z, que no salen
+
+
+def texto(y, s, x=None):
+    """Un renglon de texto; sin X va centrado. Las letras van de tres en tres en 16 bits
+    (0aaaaabb bbbccccc); los katakana, que no caben en los 5 bits, van en un renglon de bytes
+    que empieza con un hueco (0x80) para que el primer byte lo distinga."""
+    if x is None:
+        x = (256 - 8 * len(s)) // 2
+    assert 0 <= x and x + 8 * len(s) <= 256, "el renglon %r se sale de la pantalla" % s
+    if any(c in KATA for c in s):
+        return [y, x - 6, 0x80] + [letra(c) for c in s] + [0xFE]
+    cod = [CINCO.index(c) + 1 for c in s] + [0]
+    while len(cod) % 3:
+        cod.append(0)
+    out = [y, x]
+    for i in range(0, len(cod), 3):
+        w = cod[i] << 10 | cod[i + 1] << 5 | cod[i + 2]
+        out += [w >> 8, w & 0xFF]
+    return out
+
+
+def fichas(y, x, grupos):
+    """Grupos de fichas separados por un hueco; grupos = "m1 m2 m3 | p4 p5 p6"."""
+    assert x + ancho_fichas(grupos) <= 256, "las fichas %r se salen de la pantalla" % grupos
+    out = [y, x]
+    for i, g in enumerate(grupos.split("|")):
+        if i:
+            out.append(0x80)
+        out += [0x80 + F(t) for t in g.split()]
+    return out + [0xFE]
+
+
+def ancho_fichas(grupos):
+    g = grupos.split("|")
+    return sum(12 * len(x.split()) for x in g) + 6 * (len(g) - 1)
+
+
+def centradas(y, grupos):
+    return fichas(y, (256 - ancho_fichas(grupos)) // 2, grupos)
+
+
+def kanji(y, x, nombre):
+    a = KANJI[nombre]
+    return [y, x, 0xC0, a & 0xFF, a >> 8, 0xFE]
+
+
+FIN = [0xFF]
+
+PANTALLAS = [
+    # 1
+    texto(8, "HOW TO PLAY")
+    + texto(30, "YOU PLAY AGAINST THREE RIVALS")
+    + centradas(70, "m2 m3 m4 p1 p1 p5 p6 p7 s3 s4 s8 E E | s5")
+    + texto(104, "DRAW ONE THEN THROW ONE")
+    + texto(130, "LEFT AND RIGHT PICK THE TILE")
+    + texto(148, "SPACE THROWS IT")
+    + FIN,
+    # 2
+    texto(8, "THE TILES")
+    + texto(30, "THREE SUITS ONE TO NINE")
+    + centradas(56, "m1 m2 m3 m4 m5 m6 m7 m8 m9")
+    + centradas(86, "p1 p2 p3 p4 p5 p6 p7 p8 p9")
+    + centradas(116, "s1 s2 s3 s4 s5 s6 s7 s8 s9")
+    + texto(152, "FOUR OF EACH TILE")
+    + FIN,
+    # 3
+    texto(8, "WINDS AND DRAGONS")
+    + fichas(36, 40, "E") + texto(41, "EAST", 56)
+    + fichas(64, 40, "S") + texto(69, "SOUTH", 56)
+    + fichas(92, 40, "W") + texto(97, "WEST", 56)
+    + fichas(120, 40, "N") + texto(125, "NORTH", 56)
+    + fichas(36, 140, "BL") + texto(41, "WHITE", 156)
+    + fichas(64, 140, "VE") + texto(69, "GREEN", 156)
+    + fichas(92, 140, "RO") + texto(97, "RED", 156)
+    + texto(170, "THEY NEVER MAKE A RUN")
+    + FIN,
+    # 4
+    texto(8, "THE GOAL")
+    + texto(30, "FOUR SETS AND ONE PAIR")
+    + centradas(60, "m1 m2 m3 | s4 s5 s6")
+    + centradas(90, "p7 p7 p7 | E E E")
+    + centradas(120, "m9 m9")
+    + texto(152, "FOURTEEN TILES IN ALL")
+    + texto(170, "AND AT LEAST ONE YAKU")
+    + FIN,
+    # 5
+    texto(8, "THE SETS")
+    + texto(30, "A RUN - THREE IN ORDER ONE SUIT")
+    + centradas(44, "p3 p4 p5")
+    + texto(78, "A TRIPLET - THREE THE SAME")
+    + centradas(92, "s8 s8 s8")
+    + texto(126, "A PAIR - TWO THE SAME")
+    + centradas(140, "RO RO")
+    + FIN,
+    # 6
+    texto(8, "CALLING")
+    + texto(26, "WHEN A RIVAL THROWS")
+    + texto(53, "ポン", 16) + fichas(48, 56, "s2 s2 | s2") + texto(53, "A TRIPLET", 130)
+    + texto(83, "チー", 16) + fichas(78, 56, "m3 m4 | m5") + texto(83, "A RUN", 130)
+    + texto(113, "カン", 16) + fichas(108, 56, "N N N | N") + texto(113, "FOUR", 130)
+    + texto(143, "ロン", 16) + fichas(138, 56, "p9") + texto(143, "YOU WIN WITH IT", 80)
+    + texto(176, "A BOX OPENS - PICK WITH SPACE")
+    + FIN,
+    # 7
+    texto(8, "RIICHI AND TSUMO")
+    + texto(32, "リーチ", 16) + texto(32, "CLOSED AND READY", 48)
+    + centradas(48, "m1 m2 m3 p4 p5 p6 s7 s8 s9 E E m4 m5 | m6")
+    + texto(78, "BET 1000 - ONE TILE TO WIN")
+    + texto(116, "ツモ", 16) + texto(116, "WIN ON YOUR OWN DRAW", 48)
+    + centradas(132, "m6")
+    + FIN,
+    # 8
+    texto(4, "THE MENUS")
+    + kanji(20, 24, "renshuu") + texto(24, "PRACTICE", 112)
+    + kanji(40, 24, "jissen") + texto(44, "REAL GAME", 112)
+    + kanji(68, 24, "seikaku") + texto(72, "RIVALS STYLE", 112)
+    + kanji(88, 24, "menzu") + texto(92, "CHOOSE RIVALS", 112)
+    + kanji(108, 24, "ruuru") + texto(112, "RULES", 112)
+    + kanji(128, 24, "gamen") + texto(132, "SCREEN", 112)
+    + kanji(148, 24, "shuuryou") + texto(152, "PLAY", 112)
+    + texto(182, "UP AND DOWN THEN SPACE")
+    + FIN,
+    # 9
+    texto(8, "THE RIVALS LEARN")
+    + texto(30, "EACH HAS SEVEN BARS OF STYLE")
+    + texto(48, "AND THEY LEARN FROM YOUR WINS")
+    + texto(84, "MUSIC")
+    + texto(106, "ON YOUR TURN F1 STOPS IT")
+    + texto(124, "F2 TO F5 CHANGE IT")
+    + texto(160, "F1 ON THE FIRST MENU")
+    + texto(178, "BRINGS THIS BACK")
+    + FIN,
 ]
 
 
-def fuente():
-    letras = sorted(set("".join(PAGINAS)) - {" ", "\n"})
-    faltan = [c for c in letras if c not in G]
-    if faltan:
-        raise SystemExit("faltan glifos: %r" % faltan)
-    datos = bytearray()
-    for c in letras:
-        filas = G[c] + ["....."]
-        for f in filas:
-            b = 0
-            for k, x in enumerate(f):
-                if x == "#":
-                    b |= 0x40 >> k
-            datos.append(b)
-    return letras, bytes(datos)
-
-
-def paginas(letras):
-    out = bytearray()
-    for i, p in enumerate(PAGINAS):
-        for c in p:
-            if c == "\n":
-                out.append(0xFE)
-            elif c == " ":
-                out.append(0)
-            else:
-                out.append(letras.index(c) + 1)
-        out.append(0xFF)
+def bytes_tutorial():
+    out = []
+    for p in PANTALLAS:
+        out += p
     out.append(0xFD)
+    for b in out:
+        assert 0 <= b <= 0xFF
     return bytes(out)
 
 
 def main(argv):
-    letras, f = fuente()
-    t = paginas(letras)
+    datos = bytes_tutorial()
+    tabla = bytes(letra(c) for c in CINCO)
+    assert len(tabla) <= 31
     with open(argv[1], "w", encoding="ascii") as s:
-        s.write("; lo escribe tools/textos.py: %d glifos (%d bytes) y %d paginas (%d bytes)\n"
-                % (len(letras), len(f), len(PAGINAS), len(t)))
-        s.write("fuente:\n")
-        for i in range(0, len(f), 8):
-            s.write("\tdefb " + ",".join("0%02Xh" % x for x in f[i:i + 8]) + "\t; %s\n" % letras[i // 8])
-        s.write("paginas:\n")
-        for i in range(0, len(t), 16):
-            s.write("\tdefb " + ",".join("0%02Xh" % x for x in t[i:i + 16]) + "\n")
-    print("%d glifos, %d bytes de fuente, %d de paginas" % (len(letras), len(f), len(t)))
+        s.write("tabla5:\t\t; el codigo de 5 bits - 1 -> la letra de la rejilla\n\tdefb "
+                + ",".join("0%02Xh" % x for x in tabla) + "\n")
+        s.write("; lo escribe tools/textos.py: %d pantallas, %d bytes\n" % (len(PANTALLAS), len(datos)))
+        s.write("diapos:\n")
+        for i in range(0, len(datos), 16):
+            s.write("\tdefb " + ",".join("0%02Xh" % x for x in datos[i:i + 16]) + "\n")
+    print("%d pantallas, %d bytes" % (len(PANTALLAS), len(datos)))
 
 
 if __name__ == "__main__":

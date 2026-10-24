@@ -10,6 +10,7 @@ if {[info exists env(TUTO_SALIDA)]} { set ::SALIDA $env(TUTO_SALIDA) }
 file mkdir $::SALIDA
 set throttle off
 set ::n 0
+set ::PAGINAS 9
 
 proc tecla {fila mascara} {
     keymatrixdown $fila $mascara
@@ -36,18 +37,21 @@ proc vigila {} {
         close $f
         foto menu
         tecla 6 0x20
-        for {set i 1} {$i <= 5} {incr i} {
-            after time [expr {3.0 * $i - 1}] "foto pagina$i"
-            after time [expr {3.0 * $i}] "tecla 8 0x01"
+        for {set i 1} {$i <= $::PAGINAS} {incr i} {
+            after time [expr {3.0 * $i + 1}] "foto pagina$i"
+            after time [expr {3.0 * $i + 2}] "tecla 8 0x01"
         }
-        after time 17.5 "foto vuelta; puts \"C000=\[peek 0xC000\] C001=\[peek 0xC001\]\""
-        after time 18.5 "tecla 8 0x40"
-        after time 19.5 "foto abajo"
-        after time 20 "tecla 8 0x20"
-        after time 21 "foto arriba"
-        after time 22 "tecla 8 0x01"
-        after time 27 "foto sigue; puts \"C000=\[peek 0xC000\] C001=\[peek 0xC001\]\""
-        after time 28 exit
+        set t [expr {3.0 * $::PAGINAS + 5}]
+        after time $t "foto vuelta; puts \"C000=\[peek 0xC000\] C001=\[peek 0xC001\]\""
+        after time [expr {$t + 1}] "tecla 8 0x40"
+        after time [expr {$t + 2}] "foto abajo"
+        after time [expr {$t + 2.5}] "tecla 8 0x20"
+        after time [expr {$t + 3.5}] "foto arriba"
+        after time [expr {$t + 4.5}] "tecla 8 0x01"
+        after time [expr {$t + 9}] "foto sigue"
+        after time [expr {$t + 10}] "tecla 8 0x01"
+        after time [expr {$t + 20}] "foto partida"
+        after time [expr {$t + 21}] exit
         return
     }
     incr ::n
