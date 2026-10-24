@@ -15,10 +15,11 @@ Un tile es de 8 x 8 puntos logicos (cada uno, dos de SCREEN 7); a 2 bits, dos by
 color es 2 x (bit del segundo) + (bit del primero); a 3 bits, tres bytes y 4 x tercero + 2 x segundo
 + primero; a 1 bit, un byte.
 
-Se dibuja el texto letra a letra (la I estrecha y la M ancha; relleno rojo, rayas naranjas en la mitad de
-abajo, un punto de azul y dos de negro alrededor), se corta en casillas, cada una va al grupo de tiles cuya paleta tiene sus colores (las iguales
-comparten tile; las vacias, el tile 0x00 como en el original) y se escribe de nuevo el mapa entero
-con el mismo RLE.
+Se dibuja el texto letra a letra (la I estrecha y la M ancha; relleno rojo que baja a naranja con
+un degradado tramado, Bayer 4 x 4, en la mitad de abajo; un punto de azul y dos de negro
+alrededor), se corta en casillas, cada una va a un grupo de tiles cuya paleta tiene sus colores
+(primero las que caben en menos grupos; las iguales comparten tile; las vacias, el tile 0x00 como
+en el original) y se escribe de nuevo el mapa entero con el mismo RLE.
 
 El dibujo queda en traduccion/logotipo.txt (un caracter por punto: . fondo, o naranja, A azul, R rojo,
 N negro) y es lo que lee la construccion; solo `dibuja` usa PIL y la fuente Impact de Windows.
@@ -36,7 +37,8 @@ LETRAS = {0: ".", 2: "o", 8: "A", 9: "R", 15: "N"}
 MAPA = 0xA453                        # p11
 FILAS, COLS = (8, 13), (5, 27)       # casillas del texto ingles (fin excluido)
 ALTO, ARRIBA = 34, 3                 # alto de las letras y linea de arriba dentro de las casillas
-NARANJA = (16, 40)                   # lineas con rayas naranjas (dentro de las casillas)
+NARANJA = (20, 40, 16)               # degradado: de rojo en la linea 20 a naranja (16/16) en la 40
+BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
 PESO = {"I": 0.5, "M": 1.35, "T": 0.9, "L": 0.85, "E": 0.85}   # anchura de cada letra (1 = la normal)
 GRUPOS = [  # (paleta como lista de colores, bits, primer codigo, cuantos, origen en p10)
     ([9, 15], 1, 0x04, 15, 0x9571),
@@ -158,9 +160,7 @@ def dibuja():
         fila = []
         for x in range(ancho):
             if m[y][x]:
-                raya = NARANJA[0] <= y < NARANJA[1] and x % 4 == 1 and all(
-                    m[y + d][x] for d in (-2, -1, 1, 2) if 0 <= y + d < alto)
-                fila.append(2 if raya else 9)
+                fila.append(2 if naranja(x, y) else 9)
             elif azul[y][x]:
                 fila.append(8)
             elif negro[y][x]:
@@ -169,6 +169,13 @@ def dibuja():
                 fila.append(0)
         out.append(fila)
     return out
+
+
+def naranja(x, y):
+    """El degradado tramado (Bayer 4 x 4): cuanto mas abajo, mas puntos naranjas."""
+    ini, fin, tope = NARANJA
+    nivel = max(0, min(tope, (y - ini) * tope // (fin - ini)))
+    return BAYER[y % 4][x % 4] < nivel
 
 
 def codifica(celda, paleta, bits):
@@ -192,27 +199,33 @@ def aplica(rom):
         if 0x04 <= t <= 0x7D:
             celdas[p] = 0x00
     libres = [list(range(g[2], g[2] + g[3])) for g in GRUPOS]
-    hechos = {}
     zonas = []
+    sitios = {}                               # casilla distinta -> posiciones del mapa
     for r in range(*FILAS):
         for c in range(*COLS):
             celda = tuple(tuple(img[(r - FILAS[0]) * 8 + y][(c - COLS[0]) * 8 + x] for x in range(8))
                           for y in range(8))
-            colores = {v for fila in celda for v in fila}
-            if colores == {0}:
+            if {v for fila in celda for v in fila} == {0}:
                 celdas[r * 32 + c] = 0x00
-                continue
-            if celda not in hechos:
-                for k, (paleta, bits, ini, n, src) in enumerate(GRUPOS):
-                    if colores <= set(paleta) and libres[k]:
-                        cod = libres[k].pop(0)
-                        o = off10(src) + (cod - ini) * 8 * bits
-                        rom[o:o + 8 * bits] = codifica(celda, paleta, bits)
-                        hechos[celda] = cod
-                        break
-                else:
-                    raise SystemExit("logotipo: no hay tile para una casilla de colores %s" % sorted(colores))
-            celdas[r * 32 + c] = hechos[celda]
+            else:
+                sitios.setdefault(celda, []).append(r * 32 + c)
+
+    def grupos_de(celda):
+        colores = {v for fila in celda for v in fila}
+        return [k for k, g in enumerate(GRUPOS) if colores <= set(g[0])]
+    # primero las casillas que caben en menos grupos, y cada una en el grupo con mas sitio libre
+    for celda in sorted(sitios, key=lambda cel: len(grupos_de(cel))):
+        opciones = [k for k in grupos_de(celda) if libres[k]]
+        if not opciones:
+            raise SystemExit("logotipo: no hay tile para una casilla de colores %s" %
+                             sorted({v for fila in celda for v in fila}))
+        k = max(opciones, key=lambda k: len(libres[k]))
+        paleta, bits, ini, n, src = GRUPOS[k]
+        cod = libres[k].pop(0)
+        o = off10(src) + (cod - ini) * 8 * bits
+        rom[o:o + 8 * bits] = codifica(celda, paleta, bits)
+        for p in sitios[celda]:
+            celdas[p] = cod
     for paleta, bits, ini, n, src in GRUPOS:
         zonas.append((off10(src), off10(src) + n * 8 * bits))
     nuevo = escribe_mapa(xy, celdas)
