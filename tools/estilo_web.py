@@ -86,4 +86,9 @@ footer{margin-top:5rem;padding-top:1.5rem;border-top:1px solid var(--linea);
   border:1px solid var(--linea);border-radius:3px}
 .galeria figcaption{color:var(--suave);font-size:13px;margin-top:.5rem}
 audio{display:block;width:100%;max-width:640px;margin:.75rem 0 1.5rem}
+.descarga{display:inline-block;padding:.7rem 1.4rem;border:1px solid var(--rojo);
+  color:var(--rojo);text-decoration:none;letter-spacing:.08em;text-transform:uppercase;
+  font-size:13px;margin:0 .5rem .5rem 0}
+.descarga:hover,.descarga:focus{background:var(--rojo);color:var(--fondo)}
+.descargas small{display:block;color:var(--suave);font-size:13px}
 """
